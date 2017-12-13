@@ -415,8 +415,6 @@ func (op pgOperDriftInstance) Do(pgCtrl *podGroupController, c cluster.Cluster, 
 	oldSpec, oldPod := podCtrl.spec.Clone(), podCtrl.pod
 	oldNodeName := oldPod.NodeName()
 
-	pgCtrl.waitLastPodHealthy(op.instanceNo - 1)
-
 	isDrifted = podCtrl.Drift(c, op.fromNode, op.toNode, op.force)
 	runtime = podCtrl.pod.ImRuntime
 	if isDrifted {

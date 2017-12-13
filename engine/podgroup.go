@@ -111,6 +111,7 @@ func (pgCtrl *podGroupController) Deploy() {
 	pgCtrl.opsChan <- pgOperSnapshotPrevState{}
 	pgCtrl.opsChan <- pgOperSaveStore{true}
 	pgCtrl.opsChan <- pgOperLogOperation{"deploy finished"}
+	pgCtrl.opsChan <- pgOperOver{}
 }
 
 func (pgCtrl *podGroupController) RescheduleInstance(numInstances int, restartPolicy ...RestartPolicy) {
@@ -308,11 +309,15 @@ func (pgCtrl *podGroupController) cleanCorruptedContainers() {
 				id:         rtPod.Container.Id,
 			})
 	}
-	log.Infof("pods::%v", pods)
 	corrupted := false
 	uselessContainers := make([]*container, 0)
-	for _, containers := range pods {
-		if len(containers) > 1 {
+	for instance, containers := range pods {
+		if instance > pgCtrl.spec.NumInstances {
+			corrupted = true
+			for _, container := range containers {
+				uselessContainers = append(uselessContainers, container)
+			}
+		} else if len(containers) > 1 {
 			By(ByVersionAndDriftCounter).Sort(containers)
 			corrupted = true
 			for _, container := range containers[1:] {
